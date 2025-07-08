@@ -16,7 +16,7 @@ from dashboard_helper_funcs import (
 st.markdown("""
 # SOC Distance Dashboard
 
-This dashboard presents an interactive exploration of occupational distances derived from millions of US job advertisements. Each job ad has been classified into its corresponding O*NET Standard Occupational Classification (SOC) code. We calculate pairwise distances between SOCs based on the **skills required in job postings**, providing a novel data-driven measure of occupational similarity and divergence. These distance measures can inform research in labor economics, workforce development, and occupational mobility.
+This dashboard presents an interactive exploration of occupational distances derived from millions of US job advertisements. Each job ad has been classified into its corresponding O*NET Standard Occupational Classification (SOC) code. We calculate pairwise distances between SOCs based on the **skills required in job postings**, providing a novel data-driven measure of occupational distance and similarity. These distance measures can inform research in labor economics, workforce development, and occupational mobility.
 
 You can find additional methodological details in the following paper:  
 [Measuring Distances Between Occupations Using Job Advertisements](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5096487)
@@ -35,7 +35,7 @@ You can find additional methodological details in the following paper:
   
   1. **Download Data**
      
-     Download our processed distance data for SOC4 or SOC6 levels in either CSV or Parquet format. This allows you to work with the raw distance matrices directly in your own analyses.
+     Download our processed distance data for SOC4 or SOC6 levels in either CSV or Parquet format. This allows you to work with the raw distance data directly in your own analyses.
   
   2. **Distance Over Years**
      
@@ -63,8 +63,6 @@ Feel free to explore and download the data. If you have questions or feedback pl
 with st.spinner("Loading data..."):
     df_soc4, df_soc6 = load_soc_dfs()
 st.success("Data loaded successfully.")
-
-df_soc4, df_soc6 = load_soc_dfs()
 
 ### lookup Options
 st.subheader("Lookup SOC Codes and Titles")
@@ -154,49 +152,163 @@ with tab1:
     )
 
 # Tab 2: Distance Over Years
+# Tab 2: Distance Over Years
 with tab2:
     st.header("Distance Over Years")
-    # Widgets for inputs
-    soc_mode = st.radio("SOC Mode", ["SOC4", "SOC6"])
-    distance_type = st.radio("Distance Type", ["Euclidean", "Cosine"])
-    soc1 = st.selectbox("SOC 1 Code", sorted(df_soc4["SOC4_1_Code"].unique()) if soc_mode=="SOC4" else sorted(df_soc6["SOC6_1_Code"].unique()))
-    soc2 = st.selectbox("SOC 2 Code", sorted(df_soc4["SOC4_2_Code"].unique()) if soc_mode=="SOC4" else sorted(df_soc6["SOC6_2_Code"].unique()))
-    start_year, end_year = st.slider("Year Range", min_value=int(df_soc4["year"].min()), max_value=int(df_soc4["year"].max()), value=(2010,2022))
-    if st.button("Generate Plot", key="tab2"):
-        fig = plot_distance_over_years(df_soc4, df_soc6, soc_mode, distance_type, soc1, soc2, start_year, end_year)
+
+    with st.form("distance_over_years_form"):
+        soc_mode = st.radio("SOC Mode", ["SOC4", "SOC6"])
+        distance_type = st.radio("Distance Type", ["Euclidean", "Cosine"])
+        soc1 = st.selectbox(
+            "SOC 1 Code",
+            sorted(df_soc4["SOC4_1_Code"].unique()) if soc_mode == "SOC4" else sorted(df_soc6["SOC6_1_Code"].unique())
+        )
+        soc2 = st.selectbox(
+            "SOC 2 Code",
+            sorted(df_soc4["SOC4_2_Code"].unique()) if soc_mode == "SOC4" else sorted(df_soc6["SOC6_2_Code"].unique())
+        )
+        start_year, end_year = st.slider(
+            "Year Range",
+            min_value=int(df_soc4["year"].min()),
+            max_value=int(df_soc4["year"].max()),
+            value=(2010, 2022)
+        )
+
+        # Submit button for the form
+        submitted = st.form_submit_button("Generate Plot")
+
+    # Only runs when "Generate Plot" is clicked
+    if submitted:
+        fig = plot_distance_over_years(
+            df_soc4,
+            df_soc6,
+            soc_mode,
+            distance_type,
+            soc1,
+            soc2,
+            start_year,
+            end_year
+        )
         st.plotly_chart(fig, use_container_width=True)
 
+# with tab2:
+#     st.header("Distance Over Years")
+#     # Widgets for inputs
+#     soc_mode = st.radio("SOC Mode", ["SOC4", "SOC6"])
+#     distance_type = st.radio("Distance Type", ["Euclidean", "Cosine"])
+#     soc1 = st.selectbox("SOC 1 Code", sorted(df_soc4["SOC4_1_Code"].unique()) if soc_mode=="SOC4" else sorted(df_soc6["SOC6_1_Code"].unique()))
+#     soc2 = st.selectbox("SOC 2 Code", sorted(df_soc4["SOC4_2_Code"].unique()) if soc_mode=="SOC4" else sorted(df_soc6["SOC6_2_Code"].unique()))
+#     start_year, end_year = st.slider("Year Range", min_value=int(df_soc4["year"].min()), max_value=int(df_soc4["year"].max()), value=(2010,2022))
+#     if st.button("Generate Plot", key="tab2"):
+#         fig = plot_distance_over_years(df_soc4, df_soc6, soc_mode, distance_type, soc1, soc2, start_year, end_year)
+#         st.plotly_chart(fig, use_container_width=True)
+
 # Tab 3: Top/Bottom K Occupations
+
 with tab3:
     st.header("Top/Bottom K Occupations")
-    soc_mode = st.radio("SOC Mode", ["SOC4", "SOC6"], key="tab2_mode")
-    distance_type = st.radio("Distance Type", ["Euclidean", "Cosine"], key="tab2_dist")
-    start_year, end_year = st.slider("Year Range", min_value=int(df_soc4["year"].min()), max_value=int(df_soc4["year"].max()), value=(2010,2022), key="tab2_slider")
-    min_or_max = st.radio("Show", ["Min", "Max"])
-    k = st.slider("K", 1, 25, 5)
-    pivot_soc = st.text_input("Pivot SOC (Optional)", "")
-    if st.button("Generate Table", key="tab3"):
+
+    with st.form("top_bottom_k_form"):
+        soc_mode = st.radio("SOC Mode", ["SOC4", "SOC6"], key="tab3_mode")
+        distance_type = st.radio("Distance Type", ["Euclidean", "Cosine"], key="tab3_dist")
+        start_year, end_year = st.slider(
+            "Year Range",
+            min_value=int(df_soc4["year"].min()),
+            max_value=int(df_soc4["year"].max()),
+            value=(2010, 2022),
+            key="tab3_slider"
+        )
+        min_or_max = st.radio("Show", ["Min", "Max"])
+        k = st.slider("K", 1, 25, 5)
+        pivot_soc = st.text_input("Pivot SOC (Optional)", "")
+
+        submitted = st.form_submit_button("Generate Table")
+
+    if submitted:
         pivot_soc_input = pivot_soc.strip() if pivot_soc else None
-        table = get_top_bottom_k_table(df_soc4, df_soc6, soc_mode, distance_type, start_year, end_year, k, min_or_max, pivot_soc_input)
+        table = get_top_bottom_k_table(
+            df_soc4,
+            df_soc6,
+            soc_mode,
+            distance_type,
+            start_year,
+            end_year,
+            k,
+            min_or_max,
+            pivot_soc_input
+        )
         st.dataframe(table)
         csv = table.to_csv(index=False).encode()
         st.download_button("Download CSV", csv, "top_bottom_k.csv")
 
+# with tab3:
+    # st.header("Top/Bottom K Occupations")
+    # soc_mode = st.radio("SOC Mode", ["SOC4", "SOC6"], key="tab2_mode")
+    # distance_type = st.radio("Distance Type", ["Euclidean", "Cosine"], key="tab2_dist")
+    # start_year, end_year = st.slider("Year Range", min_value=int(df_soc4["year"].min()), max_value=int(df_soc4["year"].max()), value=(2010,2022), key="tab2_slider")
+    # min_or_max = st.radio("Show", ["Min", "Max"])
+    # k = st.slider("K", 1, 25, 5)
+    # pivot_soc = st.text_input("Pivot SOC (Optional)", "")
+    # if st.button("Generate Table", key="tab3"):
+    #     pivot_soc_input = pivot_soc.strip() if pivot_soc else None
+    #     table = get_top_bottom_k_table(df_soc4, df_soc6, soc_mode, distance_type, start_year, end_year, k, min_or_max, pivot_soc_input)
+    #     st.dataframe(table)
+    #     csv = table.to_csv(index=False).encode()
+    #     st.download_button("Download CSV", csv, "top_bottom_k.csv")
+
 # Tab 4: Average Distance Per Year
 with tab4:
     st.header("Average Distance Per Year")
-    soc_mode = st.radio("SOC Mode", ["SOC4", "SOC6"], key="tab3_mode")
-    distance_type = st.radio("Distance Type", ["Euclidean", "Cosine"], key="tab3_dist")
-    start_year, end_year = st.slider("Year Range", min_value=int(df_soc4["year"].min()), max_value=int(df_soc4["year"].max()), value=(2010,2022), key="tab3_slider")
-    if st.button("Generate Plot", key="tab4"):
-        fig = plot_average_distance_per_year(df_soc4, df_soc6, soc_mode, distance_type, start_year, end_year)
+
+    with st.form("average_distance_form"):
+        soc_mode = st.radio("SOC Mode", ["SOC4", "SOC6"], key="tab4_mode")
+        distance_type = st.radio("Distance Type", ["Euclidean", "Cosine"], key="tab4_dist")
+        start_year, end_year = st.slider(
+            "Year Range",
+            min_value=int(df_soc4["year"].min()),
+            max_value=int(df_soc4["year"].max()),
+            value=(2010, 2022),
+            key="tab4_slider"
+        )
+        submitted = st.form_submit_button("Generate Plot")
+
+    if submitted:
+        fig = plot_average_distance_per_year(
+            df_soc4,
+            df_soc6,
+            soc_mode,
+            distance_type,
+            start_year,
+            end_year
+        )
         st.plotly_chart(fig, use_container_width=True)
+
+# with tab4:
+#     st.header("Average Distance Per Year")
+#     soc_mode = st.radio("SOC Mode", ["SOC4", "SOC6"], key="tab3_mode")
+#     distance_type = st.radio("Distance Type", ["Euclidean", "Cosine"], key="tab3_dist")
+#     start_year, end_year = st.slider("Year Range", min_value=int(df_soc4["year"].min()), max_value=int(df_soc4["year"].max()), value=(2010,2022), key="tab3_slider")
+#     if st.button("Generate Plot", key="tab4"):
+#         fig = plot_average_distance_per_year(df_soc4, df_soc6, soc_mode, distance_type, start_year, end_year)
+#         st.plotly_chart(fig, use_container_width=True)
 
 # Tab 5: Heatmap
 with tab5:
     st.header("Heatmap")
-    distance_type = st.radio("Distance Type", ["Euclidean", "Cosine"], key="tab4_dist")
-    year = st.selectbox("Year", sorted(df_soc4["year"].unique()))
-    if st.button("Generate Heatmap"):
+
+    with st.form("heatmap_form"):
+        distance_type = st.radio("Distance Type", ["Euclidean", "Cosine"], key="tab5_dist")
+        year = st.selectbox("Year", sorted(df_soc4["year"].unique()))
+        submitted = st.form_submit_button("Generate Heatmap")
+
+    if submitted:
         fig = plot_distance_heatmap(df_soc4, distance_type, year)
         st.plotly_chart(fig, use_container_width=True)
+
+# with tab5:
+    # st.header("Heatmap")
+    # distance_type = st.radio("Distance Type", ["Euclidean", "Cosine"], key="tab4_dist")
+    # year = st.selectbox("Year", sorted(df_soc4["year"].unique()))
+    # if st.button("Generate Heatmap"):
+    #     fig = plot_distance_heatmap(df_soc4, distance_type, year)
+    #     st.plotly_chart(fig, use_container_width=True)
