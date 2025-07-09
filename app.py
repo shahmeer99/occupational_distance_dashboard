@@ -55,7 +55,7 @@ You can find additional methodological details in the following paper:
 
 ---
 
-Feel free to explore and download the data. If you have questions or feedback please reach out to us at aa658@georgetown.edu or mohammadshahmeerah@hbku.edu or ec1269@georgetown.edu !!!
+Feel free to explore and download the data. If you have questions or feedback please reach out to us at aa658@georgetown.edu or mohammadshahmeerah@hbku.edu.qa or ec1269@georgetown.edu !
 
 """)
 
@@ -152,12 +152,12 @@ with tab1:
     )
 
 # Tab 2: Distance Over Years
-# Tab 2: Distance Over Years
 with tab2:
     st.header("Distance Over Years")
 
+    soc_mode = st.radio("SOC Mode", ["SOC4", "SOC6"])
     with st.form("distance_over_years_form"):
-        soc_mode = st.radio("SOC Mode", ["SOC4", "SOC6"])
+        # soc_mode = st.radio("SOC Mode", ["SOC4", "SOC6"])
         distance_type = st.radio("Distance Type", ["Euclidean", "Cosine"])
         soc1 = st.selectbox(
             "SOC 1 Code",
@@ -190,6 +190,7 @@ with tab2:
             end_year
         )
         st.plotly_chart(fig, use_container_width=True)
+
 
 # with tab2:
 #     st.header("Distance Over Years")
