@@ -156,6 +156,7 @@ with tab2:
     st.header("Distance Over Years")
 
     soc_mode = st.radio("SOC Mode", ["SOC4", "SOC6"])
+    
     with st.form("distance_over_years_form"):
         # soc_mode = st.radio("SOC Mode", ["SOC4", "SOC6"])
         distance_type = st.radio("Distance Type", ["Euclidean", "Cosine"])
